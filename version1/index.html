@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<meta charset='utf-8'>
+<html>
+<style>
+
+.baseMap{
+  stroke-width:0.8px;
+  stroke:white;
+  fill:#E4E5E6 ;
+  opacity:0.9;
+}
+
+.cities_start{
+  fill:rgba(199,70,70,.8);
+}
+
+.cities_end{
+  fill:rgba(29, 168, 183, 1);
+  }
+
+.line{
+/*  stroke:rgba(0, 0, 0, 0.3);*/
+  stroke:rgba(199,70,70,1);
+  stroke-width:4px;
+  fill:none;
+  stroke-dasharray:3, 3;
+}
+
+.geo-globe {
+  fill: rgba(236,249,255,0.5);
+/*fill: rgba(226,247,220, .2);*/
+}
+
+.bar{
+ opacity:0.7;
+/* stroke: white;
+ stroke-width:2px;*/
+}
+
+#map{
+/*  width:800px;*/
+margin-left: 30px;
+}
+
+#chart{
+margin-top: -65px;
+}
+
+.x_axis path {
+  display: none;
+}
+
+.x_axis{
+  font-size: 0.6em;
+}
+
+.y_axis {
+  display:none;
+}
+
+.active{
+/*  fill:rgba(29, 168, 183, .9);*/
+  fill:black !important;
+  opacity:0.8;
+/*  fill:rgba(199,70,70,.8);*/
+}
+
+.lineActive{
+  stroke:rgba(0, 0, 0, .8) ;
+}
+
+.dotActive{
+  fill:rgba(0, 0, 0, .7);
+}
+
+.title{
+  font-size:22px;
+  font-weight: 600;
+  font-family: "Helvetica Neue";
+  fill:black;
+  opacity: 0.8;
+  margin-bottom: 50px;
+}
+
+.value{
+  font-size:18px;
+  font-family: "Helvetica Neue";
+  /*fill:rgba(29, 168, 183, 1);*/
+  opacity: 0.6;
+  fill:black;
+  font-weight: 500;
+}
+
+select{
+/*  padding-top: 100px;*/
+  font-size:15px;
+  font-family: "Helvetica Neue";
+/*  z-index: 10000;*/
+}
+
+
+.legend{
+  fill:black;
+}
+
+.countryActive{
+ fill:rgba(0, 0, 0, .6) !important;
+}
+
+
+/*.y_axis line{
+  stroke: #fdfdfd;
+  stroke-width:2.5px;
+}*/
+</style>
+<body>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js'></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src='arc.js/arc.js'></script>
+<div id="option">
+<select type='select' onchange='updateData(value);' style='color:steelblue;font-size:1.1em;'>
+  <option class="filter_button" value='101' id="a_button" selected='true'>101年</option><br>
+  <option class="filter_button" value='102' id="b_button">102年</option><br>
+  <option class="filter_button" value='103' id="c_button">103年</option><br>
+</select>
+</div>
+<div id ='map'></div>
+<div id ='chart'></div>
+<script>
+
+
+  
+  ////////////////////////////////
+  ////////////////////////////////  
+  // Global variables
+  ////////////////////////////////
+  ////////////////////////////////
+
+  // I followed Mike Bostock's margin convention to set margins first, 
+  // and then set the width and height based on margins.
+  // Here's the link to the margin convention 
+  // http://bl.ocks.org/mbostock/3019563
+
+  var margin = {top: 30, right: 30, bottom: 30, left: 30},
+    barMargin = {top:10, right: 30, bottom: 20, left: 100},
+    width = 800 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom,
+    barHeight = 180 - barMargin.top - barMargin.bottom,
+    barWidth = 800 - barMargin.left - barMargin.right;
+
+
+  // This is the projection for the flat map
+  // var projection = d3.geo.mercator()
+  //   // .center([121.0, 23.5])
+  //   .translate([width / 2, height / 1.5])
+  //   .scale(125); // feel free to tweak the number for scale and see the changes
+
+  //This is the project for the globe 
+  var projection =  d3.geo.orthographic()
+    // .center([121.0, 23.5])
+    .scale(280)
+    .translate([400,300])
+    .clipAngle(90)
+    .precision(0.5);
+
+  // var path = d3.geo.path()
+  //   .projection(projection);
+
+  var color = "rgba(127,185,220,.7)";
+
+
+  var path = d3.geo.path()
+    .projection(projection)
+    // .pointRadius(function(d) { return d.radius; });
+
+  // Create a voronoi layer for better mouse interaction experience
+  // For more reading on voronoi, check out 
+  // http://www.visualcinnamon.com/2015/07/voronoi.html
+  // var voronoi = d3.geom.voronoi()
+  //   .x(function(d) { return d.x; })
+  //   .y(function(d) { return d.y; })
+  //   .clipExtent([[0, 0], [width, height]]);
+
+
+
+  ////////////////////////////////
+  ////////////////////////////////  
+  // Bar chart global variables
+  ////////////////////////////////
+  ////////////////////////////////
+  var barX = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+  var barY = d3.scale.linear()
+    .range([barHeight,0]);
+
+  var barXAxis = d3.svg.axis()
+    .scale(barX)
+    .orient('bottom');
+
+  var barYAxis = d3.svg.axis()
+    .scale(barY)
+    .orient('left')
+
+  var svg = d3.select('#map').append('svg')
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .attr('class', 'graph-svg-component')
+    .call(responsivefy)// Call function responsivefy to make the graphic reponsive according to the window width/height
+    .append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var svgBar = d3.select('#chart').append('svg')
+    .attr('width', barWidth + barMargin.left + barMargin.right)
+    .attr('height', barHeight + barMargin.top + barMargin.bottom)
+    .attr('class', 'barChart')
+    .call(responsivefy)
+    .append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + barMargin.top + ')')
+
+  var backgroundCircle = svg.append('circle')
+      .attr('cx', width / 1.85)
+      .attr('cy', height / 1.84099)
+      .attr('r', 0)
+      .attr('class', 'geo-globe');
+
+  backgroundCircle.attr('r', projection.scale());
+
+  ////////////////////////////////
+  ////////////////////////////////  
+  // Queue: queue is an asynchronous helper library for JavaScrip 
+  // It helps coders to easily load multiple datasets 
+  // Here's the link to queue github repository:
+  // https://github.com/mbostock/queue
+  ////////////////////////////////
+  ////////////////////////////////
+
+  queue()
+      .defer(d3.json, 'data/world_countries.json')// load geojson/topojson data
+      .defer(d3.csv, 'data/exchange_student.csv')
+      .defer(d3.csv, 'data/data_school - Sheet1.csv')
+      // .defer(d3.csv, 'data/data_school.csv')
+      .await(ready);
+
+
+  function ready(error, world, data, school) {
+
+    school.sort(function(a,b){ return b.year - a.year; });
+
+    if (error) throw error;
+
+    school.forEach(
+      function(d){
+        d.count = +d.count;
+      }
+    );
+
+    barX.domain(school.map(function(d){ return d.top_three;}))
+    barY.domain([0, d3.max(school, function(d){ return d.count;})])
+
+    svgBar.selectAll('.bar')
+      // .data(school.filter(function(d) { return d.year === "101" || d.year === "102" }))
+      .data(school)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', function(d) { return barX(d.top_three); })
+      .attr('width', barX.rangeBand())
+      .attr('height', function(d) { return barHeight - barY(d.count); })
+      // .attr('y', height)
+      // .transition()
+      // .duration(1000)
+      .attr('y', function(d) { return barY(d.count); })
+     
+      .style("fill", function(d) {
+        if (d.end_country ==  "大陸" ) {
+          fillcolor = 'lightpink';
+        } else if (d.end_country == "日本") {
+          fillcolor = '#4b818c';
+        } else if (d.end_country == "美國") {
+          fillcolor = 'darkgray';
+        } else if (d.end_country == "大韓民國(南韓)") {
+          fillcolor = "#6baed6";
+        } else if (d.end_country == "德意志聯邦共和國") {
+          fillcolor = "darkblue";
+        } else if (d.end_country == "法國") {
+          fillcolor = "#EDDA74";
+        } else if (d.end_country == "英國") {
+          fillcolor = "#949494";
+        } else if (d.end_country == "荷蘭王國") {
+          fillcolor = "#85BB65";
+        } else if (d.end_country == "捷克共和國") {
+          fillcolor = "#F2BB66";
+        } else if (d.end_country == "加拿大") {
+          fillcolor = "#17becf";
+        } else if (d.end_country == "瑞典王國") {
+          fillcolor = "#98df8a";
+        } else if (d.end_country == "澳大利亞") {
+          fillcolor = "#a55194";
+        } else if (d.end_country == "香港") {
+          fillcolor = "#fe9d89";
+        } else if (d.end_country == "西班牙王國") {
+          fillcolor = "lightblue";
+        } else if (d.end_country == "奧地利共和國") {
+          fillcolor = "#ce6dbd";
+        } else if (d.end_country == "泰王國(泰國)") {
+          fillcolor = "#EDDA74";
+        } else if (d.end_country == "新加坡共和國") {
+          fillcolor = "#8c6d31";
+        } else if (d.end_country == "芬蘭共和國") {
+          fillcolor = "#b37c71";
+        } else if (d.end_country == "馬來西亞") {
+          fillcolor = "#3182bd";
+        } else if (d.end_country == "菲律賓共和國") {
+          fillcolor = "#de9ed6";
+        } else if (d.end_country == "比利時") {
+          fillcolor = "darkred";
+        } else if (d.end_country == "波蘭") {
+          fillcolor = "#3182bd";
+        } else if (d.end_country == "瑞士") {
+          fillcolor = "hotpink";
+        } else {
+          fillcolor = 'blue';
+        }
+        return fillcolor;
+      })
+      .on('mouseover',function(d){
+
+        d3.select(this)
+          .classed("active", true);
+        d3.select(".country")
+          .text(d.end_country)
+        d3.select(".count")
+          .text(d.count)
+        d3.select(".url")
+          .text(d.url)
+        d3.select(".school")
+          .text(d.top_three)
+         d3.select(".year")
+          .text(d.year)
+    
+        })
+      .on('mouseout', function(d){
+
+        d3.select(this)
+          .classed("active", false)
+        d3.select(".line")
+            .classed("lineActive",false)
+        d3.select(".country")
+          .text(" ")
+        d3.select(".count")
+          .text(" ")
+        d3.select(".url")
+          .text(" ")
+        d3.select(".year")
+          .text(" ")
+        d3.select(".school")
+          .text(" ")
+      })
+
+    data.forEach(
+      function(d){
+        d.end_lat = +d.end_lat;
+        d.end_long = +d.end_long;
+        d.start_lat = +d.start_lat;
+        d.start_long = +d.start_long;
+
+        d.count = + d.count;
+
+        d.greatcircle = new arc.GreatCircle({x:d.start_long, y:d.start_lat}, {x:d.end_long, y:d.end_lat});
+        d.line = d.greatcircle.Arc(100, {offset:10});
+        d.arc = d.line.json();
+
+        // svg.append("path")
+        //   .datum({type: "Point", coordinates: [d.end_long, d.end_lat]})
+        //   .attr("d", path.pointRadius(8));
+      }
+    );
+
+   
+    svg.selectAll('path')
+       .data(world.features)
+       .enter()
+       .append('path')
+       .attr('d', path)
+       .attr('class','baseMap')
+      //  .style("fill", function(d) {
+      //   if (d.properties.name ==  "大陸" ) {
+      //     fillcolor = 'lightpink';
+      //   } else if (d.properties.name == "日本") {
+      //     fillcolor = '#4b818c';
+      //   } else if (d.properties.name == "美國") {
+      //     fillcolor = 'darkgray';
+      //   } else if (d.properties.name == "大韓民國(南韓)") {
+      //     fillcolor = "#6baed6";
+      //   } else if (d.properties.name == "德意志聯邦共和國") {
+      //     fillcolor = "darkblue";
+      //   } else if (d.properties.name == "法國") {
+      //     fillcolor = "#EDDA74";
+      //   } else if (d.properties.name == "英國") {
+      //     fillcolor = "#949494";
+      //   } else if (d.properties.name == "荷蘭王國") {
+      //     fillcolor = "#85BB65";
+      //   } else if (d.properties.name == "捷克共和國") {
+      //     fillcolor = "#F2BB66";
+      //   } else if (d.properties.name == "加拿大") {
+      //     fillcolor = "#17becf";
+      //   } else if (d.properties.name == "瑞典王國") {
+      //     fillcolor = "#98df8a";
+      //   } else if (d.properties.name == "澳大利亞") {
+      //     fillcolor = "#a55194";
+      //   } else if (d.properties.name == "香港") {
+      //     fillcolor = "#fe9d89";
+      //   } else if (d.properties.name == "西班牙王國") {
+      //     fillcolor = "lightblue";
+      //   } else if (d.properties.name == "奧地利共和國") {
+      //     fillcolor = "#ce6dbd";
+      //   } else if (d.properties.name == "泰王國(泰國)") {
+      //     fillcolor = "#EDDA74";
+      //   } else if (d.properties.name == "新加坡共和國") {
+      //     fillcolor = "#8c6d31";
+      //   } else if (d.properties.name == "芬蘭共和國") {
+      //     fillcolor = "#b37c71";
+      //   } else if (d.properties.name == "馬來西亞") {
+      //     fillcolor = "#3182bd";
+      //   } else if (d.properties.name == "菲律賓共和國") {
+      //     fillcolor = "#de9ed6";
+      //   } else if (d.properties.name == "比利時") {
+      //     fillcolor = "darkred";
+      //   } else if (d.properties.name == "波蘭") {
+      //     fillcolor = "#3182bd";
+      //   } else if (d.properties.name == "瑞士") {
+      //     fillcolor = "hotpink";
+      //   } else {
+      //     fillcolor = '#E4E5E6';
+      //   }
+      //   return fillcolor;
+      // })
+
+       .style("fill", function(d) {
+          if (d.properties.name ==  "大陸" ) {
+            fillcolor = color;
+          } else if (d.properties.name == "日本") {
+            fillcolor = color;
+          } else if (d.properties.name == "美國") {
+            fillcolor = color;
+          } else if (d.properties.name == "大韓民國(南韓)") {
+            fillcolor = color;
+          } else if (d.properties.name == "德意志聯邦共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "法國") {
+            fillcolor = color;
+          } else if (d.properties.name == "英國") {
+            fillcolor = color;
+          } else if (d.properties.name == "荷蘭王國") {
+            fillcolor = color;
+          } else if (d.properties.name == "捷克共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "加拿大") {
+            fillcolor = color;
+          } else if (d.properties.name == "瑞典王國") {
+            fillcolor = color;
+          } else if (d.properties.name == "澳大利亞") {
+            fillcolor = color;
+          } else if (d.properties.name == "香港") {
+            fillcolor = color;
+          } else if (d.properties.name == "西班牙王國") {
+            fillcolor = color;
+          } else if (d.properties.name == "奧地利共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "泰王國(泰國)") {
+            fillcolor = color;
+          } else if (d.properties.name == "新加坡共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "芬蘭共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "馬來西亞") {
+            fillcolor = color;
+          } else if (d.properties.name == "菲律賓共和國") {
+            fillcolor = color;
+          } else if (d.properties.name == "比利時") {
+            fillcolor = color;
+          } else if (d.properties.name == "波蘭") {
+            fillcolor = color;
+          } else if (d.properties.name == "瑞士") {
+            fillcolor = color;
+          } else {
+            fillcolor = '#E4E5E6';
+          }
+          return fillcolor;
+        })
+
+
+         .on('mouseover',function(d){
+          d3.select(this)
+            .classed("countryActive", true);
+          d3.select(".country")
+            .text(d.properties.name);
+          d3.select(".count")
+            .text(d.properties.year.一零一)
+          // d3.select(".url")
+          //   .text(d.url)
+          // d3.select(".school")
+          //   .text(d.top_three)
+           d3.select(".year")
+            .text(d.properties.year.key[0])
+
+
+
+
+        })
+      .on('mouseout',function(d){   
+          d3.select(this)
+            .classed("countryActive", false);  
+          // d3.select(".country")
+          //   .text("");
+          // d3.select(".count")
+          //   .text("")
+          // d3.select(".url")
+          //   .text("")
+          // d3.select(".school")
+          //   .text(d.top_three)
+          //  d3.select(".year")
+          //   .text("")
+          // $(this).removeClass("lineActive")
+        })
+
+
+
+    // svg.selectAll('.cities_start')
+    //    .data(data)
+    //    .enter()
+    //    .append('circle')
+    //    .attr('cx', function(d){ return projection([d.start_long, d.start_lat])[0]})
+    //    .attr('cy', function(d){ return projection([d.start_long, d.start_lat])[1]})
+    //    .attr('r', '5')
+    //    // .append('g')
+    //    .attr('class','cities_start');
+
+    // svg.selectAll('.cities_end')
+    //    .data(data)
+    //    .enter()
+    //    .append('circle')
+    //    .attr('cx', function(d){ return projection([d.end_long, d.end_lat])[0]})
+    //    .attr('cy', function(d){ return projection([d.end_long, d.end_lat])[1]})
+    //    .attr('r', '5')
+    //    // .append('g')
+    //    .attr('class','cities_end')
+    //    .on('mouseover',function(d){
+    //       // tip.show(d);
+
+    //       d3.select(this)
+    //         .style("opacity", 0.9)
+    //         .style("stroke","black")
+    //         .style("stroke-width",1.5);
+    //     })
+    //     .on('mouseout', function(d){
+    //       // tip.hide(d);
+
+    //       d3.select(this)
+    //         .style("opacity", 0.6)
+    //         .style("stroke","white")
+    //         .style("stroke-width",0.5);
+    //     })
+
+    svg.selectAll(".cities_end")
+      .data(data)
+      .enter().append("path")
+      // .datum(function(d) {
+      //   return {type: "Point", coordinates: [d.end_long, d.end_lat], radius: 8};
+      // })
+      // .attr("class", "point cities_end")
+      .attr("d", path);
+
+
+    // svg.selectAll(".cities_start")
+    //   .data(data)
+    //   .enter().append("path")
+    //   .datum(function(d) {
+    //     return {type: "Point", coordinates: [d.end_long, d.end_lat], radius: 5};
+    //   })
+    //   .attr("class", "point cities_start")
+    //   .attr("d", path);  
+
+    svg.append('g')
+       .attr('class', 'line')
+       .selectAll('.arcs')
+       .data(data.map(function(d){ return d.arc; }))
+       .enter()
+       .append('path')
+       .attr('d', path)
+       // .data(data)
+
+
+    // svg.selectAll(".line").data(data)
+      //  .on('mouseover',function(d){
+       
+      //     d3.select(this).select(".line")
+      //     // $(this).toggleClass("lineActive")
+      //       .classed("lineActive", true);
+      //     d3.select(".country")
+      //       .text(d.end_country);
+      //     d3.select(".count")
+      //       .text(d.count)
+      //     d3.select(".url")
+      //       .text(d.url)
+      //     d3.select(".school")
+      //       .text(d.top_three)
+      //      d3.select(".year")
+      //       .text(d.year)
+
+
+
+      //   })
+      // .on('mouseout',function(d){   
+      //     d3.select(this)
+      //       .classed("lineActive", false);  
+      //     d3.select(".country")
+      //       .text("");
+      //     d3.select(".count")
+      //       .text("")
+      //     d3.select(".url")
+      //       .text("")
+      //     d3.select(".school")
+      //       .text(d.top_three)
+      //      d3.select(".year")
+      //       .text("")
+      //     $(this).removeClass("lineActive")
+      //   })
+
+
+
+
+    // var voronoiGroup = svg.append('g')
+    //   .attr('class', 'voronoi');
+
+    // voronoiGroup.selectAll('circles')
+    //   .data(voronoi(data))
+    //   .enter().append('path')
+    //   .attr('d', function(d) { return 'M' + d.join('L') + 'Z'; })
+    //   .datum(function(d) { return d.point; })
+    //   // .on('mouseover', mouseover)
+    //   // .on('mouseout', mouseout);
+
+    // Tool box
+    svg.append("text")
+      .attr("class","title")
+      .attr("x", 0)
+      .attr("y", height * 0.6)
+      .text('國家:');
+
+    svg.append("text")
+      .attr("class","country value")
+      .attr("x", 60)
+      .attr("y", height * 0.6)
+      .text('');
+
+    svg.append("text")
+      .attr("class","title")
+      .attr("x", 0)
+      .attr("y", height * 0.65)
+      .text('人數:');
+
+    svg.append("text")
+      .attr("class","value count")
+      .attr("x", 60)
+      .attr("y", height * 0.65)
+      .text('');
+
+    svg.append("text")
+      .attr("class","title")
+      .attr("x", 0)
+      .attr("y", height * 0.70)
+      .text('學校:');
+
+    svg.append("text")
+      .attr("class","value school")
+      .attr("x", 60)
+      .attr("y", height * 0.70)
+      .text('');
+
+    svg.append("text")
+      .attr("class","title")
+      .attr("x", 0)
+      .attr("y", height * 0.75)
+      .text('網址:');
+
+    svg.append("text")
+      .attr("class","value url")
+      .attr("x", 60)
+      .attr("y", height * 0.75)
+      .text('');
+
+    svg.append("text")
+      .attr("class","title")
+      .attr("x", 0)
+      .attr("y", height * 0.8)
+      .text('年份:');
+
+    svg.append("text")
+      .attr("class","value year")
+      .attr("x", 60)
+      .attr("y", height * 0.8)
+      .text('');
+
+
+
+  }
+
+  d3.select('svg').call( //drag on the svg element
+      d3.behavior.drag()
+        .origin(function() {
+          var r = projection.rotate(); 
+          return {x: r[0], y: -r[1]}; //starting point
+        })
+        .on('drag', function() {
+          var r = projection.rotate();
+          /* update retation angle */
+          projection.rotate([d3.event.x, -d3.event.y, r[2]]);
+          /* redraw the map and circles after each rotation */
+          svg.selectAll('path').attr('d',path);
+
+          svg.selectAll('path').selectAll('.arcs').attr('d',path);
+
+          // svg.selectAll('.arcs').data(data.map(function(d){ return d.arc; }))
+          // .enter().append('path').attr('d',path);
+
+
+          // svg.selectAll('.cities_start')
+          //   .attr('cx', function(d){ return projection([d.start_long, d.start_lat])[0]})
+          //   .attr('cy', function(d){ return projection([d.start_long, d.start_lat])[1]})
+
+          // svg.selectAll('.cities_end')
+          //   .attr('cx', function(d){ return projection([d.end_long, d.end_lat])[0]})
+          //   .attr('cy', function(d){ return projection([d.end_long, d.end_lat])[1]})
+      
+        })
+    );
+
+  function updateData(value) {
+
+
+      // svgBar.remove(); 
+
+      // Get the data again
+      d3.csv("data/data_school - Sheet1.csv", function(error, school) {
+
+        school.sort(function(a,b){ return b.year - a.year; });
+
+        school.forEach(function(d) {
+          d.count = +d.count;
+        });
+
+
+// console.log(school.filter(function(d) { return d.year == value  }))
+        // Scale the range of the data again 
+      barX.domain(school.map(function(d){ return d.top_three;}))
+      barY.domain([0, d3.max(school, function(d){ return d.count;})])
+
+      // Select the section we want to apply our changes to
+      // var svg = d3.selectAll(".bar").transition();
+
+      // Make the changes
+      var ub = svgBar.selectAll(".bar")   
+        .data(school.filter(function(d) { return d.year == value  }));
+
+      ub.enter()
+        .append('rect')
+        .attr("class", "bar")
+        .attr('x', function(d) { return barX(d.top_three); })
+        .attr('width', barX.rangeBand())
+        .attr('y', function(d) { return barY(d.count); })
+        .attr('height', function(d) { return barHeight - barY(d.count); });
+        
+      ub.exit()
+        .remove();
+
+      // d3.selectAll(".bar")
+      //   .transition()
+      //   .duration(750)
+      //   .attr("class", "bar")
+      //   .attr('x', function(d) { return barX(d.top_three); })
+      //   .attr('width', barX.rangeBand())
+      //   .attr('y', function(d) { return barY(d.count); })
+      //   .attr('height', function(d) { return barHeight - barY(d.count); })
+
+
+          
+
+      });
+  }
+
+
+
+
+
+
+    function responsivefy(svg) {
+      var container = d3.select(svg.node().parentNode),
+          width = parseInt(svg.style('width')),
+          height = parseInt(svg.style('height')),
+          aspect = width / height;
+
+      svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+          .attr('perserveAspectRatio', 'xMinYMid')
+          .call(resize);
+
+      d3.select(window).on('resize', resize);
+
+      function resize() {
+          var targetWidth = parseInt(container.style('width'));
+          svg.attr('width', targetWidth);
+          svg.attr('height', Math.round(targetWidth / aspect));
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
