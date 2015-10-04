@@ -39,41 +39,56 @@
     }
 
 .years{
-  font-size:40px;
+  font-size:18px;
   font-weight: 600;
   font-family: "Helvetica Neue";
   fill:black;
   opacity: 0.8;
-  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;
-/*  margin-bottom: 50px;*/
 }
 
 .country{
-  font-size:25px;
+  font-size:15px;
   font-family: "Helvetica Neue";
   fill:black;
   opacity: 0.7;
-/*  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;*/
-  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
-/*.svg2{
-  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;
-}*/
 
-
-
-select{
-/*  padding-top: 100px;*/
-  font-size:15px;
-  font-family: "Helvetica Neue";
-/*  z-index: 10000;*/
-}
 
 .maps{
-  width: 400px;
-  float:left;
+
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  display: inline-block;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+  margin-left: 50px;
 }
+
+@media (max-width: 600px) {
+  .maps {
+    margin-left: 0px;
+  }
+}
+
+table{
+   font-family: "Helvetica Neue";
+}
+
+/*div {
+  outline: 1px solid black;
+}
+
+svg {
+  outline: 1px solid orange;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+g {
+  outline: 1px solid red;
+}*/
 
 
 </style>
@@ -83,16 +98,42 @@ select{
 <script src='https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js'></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src='arc.js/arc.js'></script>
-<div id ='map' class="maps"></div>
-<div id ='map2' class="maps"></div>
-<div id ='map3' class="maps"></div>
+<!-- Latest compiled and minified Bootstrap JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+<script src="js/script.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css" />
+<div id="main-wrapper" class="">
+        <div id="main-content" class="container">
+            <div class="row">
+            <div id ='map' class="maps col-lg-2"></div>
+            <div id ='map2' class="maps col-lg-2"></div>
+            <div id ='map3' class="maps col-lg-2"></div>
+            </div>
+            <div class ="row">
+            <div class="col-sm-5 col-sm-offset-1">
+              <table id="example" class="display" width="100%"></table>
+            </div>
+            </div>
+        </div>
+</div>
+
+
 
 <script>
 
 
-  var margin = {top: 30, right: 30, bottom: 30, left: 30},
-    width = 800 - margin.left - margin.right,
-    height = 600 - margin.top - margin.bottom
+
+  $(".maps").css("height", $("#map").outerWidth() + "px");
+
+  var margin = {
+        top: 15,
+        right: 20,
+        bottom: 15,
+        left: 0
+    },
+    width = $(".maps").outerWidth() - margin.left - margin.right,
+    height = $(".maps").outerHeight() - margin.top - margin.bottom;
 
   //This is the project for the globe 
   var projection = d3.geo.orthographic()
@@ -140,41 +181,6 @@ select{
     .attr("class", "globe-g")
     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-  svg.append("text")
-      .attr("class","country")
-      .attr("x", 600)
-      .attr("y", height * 0.87)
-      .text("");
-
-  svg2.append("text")
-      .attr("class","country svg2")
-      .attr("x", 600)
-      .attr("y", height * 0.87)
-      .text("");
-
-  svg3.append("text")
-      .attr("class","country svg3")
-      .attr("x", 600)
-      .attr("y", height * 0.87)
-      .text("");
-
-  svg.append("text")
-      .attr("class","country count1")
-      .attr("x", 600)
-      .attr("y", height * 0.93)
-      .text("");
-
-  svg2.append("text")
-      .attr("class","country count2")
-      .attr("x", 600)
-      .attr("y", height * 0.93)
-      .text("");
-
-  svg3.append("text")
-      .attr("class","country count3")
-      .attr("x", 600)
-      .attr("y", height * 0.93)
-      .text("");
 
 
   var globe = svg.selectAll('path.globe').data([{
@@ -201,8 +207,6 @@ select{
   queue()
       .defer(d3.json, 'data/world_countries.json')// load geojson/topojson data
       .defer(d3.csv, 'data/exchange_student.csv')
-      .defer(d3.csv, 'data/data_school - Sheet1.csv')
-      // .defer(d3.csv, 'data/data_school.csv')
       .await(ready);
 
 
@@ -263,6 +267,43 @@ select{
     // .append("g")
     .attr('class', 'baseMap');
 
+    svg.append("text")
+    .attr("class","country")
+    .attr("x", width * 0.70)
+    .attr("y", height * 0.87)
+    .text("");
+
+    svg2.append("text")
+        .attr("class","country svg2")
+        .attr("x", width * 0.70)
+        .attr("y", height * 0.87)
+        .text("");
+
+    svg3.append("text")
+        .attr("class","country svg3")
+        .attr("x", width * 0.70)
+        .attr("y", height * 0.87)
+        .text("");
+
+    svg.append("text")
+        .attr("class","country count1")
+        .attr("x", width * 0.70)
+        .attr("y", height * 0.93)
+        .text("");
+
+    svg2.append("text")
+        .attr("class","country count2")
+        .attr("x", width * 0.70)
+        .attr("y", height * 0.93)
+        .text("");
+
+    svg3.append("text")
+        .attr("class","country count3")
+        .attr("x", width * 0.70)
+        .attr("y", height * 0.93)
+        .text("");
+
+
 
     svg.selectAll('.cities_end')
         .data(data.filter(function(d) { return d.year === "101"  }))
@@ -271,7 +312,7 @@ select{
             return {
                 type: "Point",
                 coordinates: [d.end_long, d.end_lat],
-                count: +d.count * 4,
+                count: +d.count,
                 country: d.end_country
             };
         })
@@ -282,7 +323,7 @@ select{
             .text(d.country)
 
           d3.select(".count1")
-            .text(d.count / 4 + " 名學生")
+            .text(d.count + " 名學生")
         });
 
 
@@ -293,7 +334,7 @@ select{
             return {
                 type: "Point",
                 coordinates: [d.end_long, d.end_lat],
-                count: +d.count * 4,
+                count: +d.count,
                 country: d.end_country
             };
         })
@@ -304,7 +345,7 @@ select{
             .text(d.country)
 
           d3.select(".count2")
-            .text(d.count / 4 + " 名學生")
+            .text(d.count+ " 名學生")
         });
 
     svg3.selectAll('.cities_end')
@@ -314,7 +355,7 @@ select{
             return {
                 type: "Point",
                 coordinates: [d.end_long, d.end_lat],
-                count: +d.count * 4,
+                count: +d.count,
                 country: d.end_country
             };
         })
@@ -325,7 +366,7 @@ select{
             .text(d.country)
 
            d3.select(".count3")
-            .text(d.count / 4 + " 名學生")
+            .text(d.count+ " 名學生")
         });
 
         // console.log(data)
@@ -344,21 +385,21 @@ select{
 
     svg.append("text")
       .attr("class","years")
-      .attr("x", 600)
+      .attr("x", width * 0.70)
       .attr("y", height * 0.80)
       .text('101年');
 
     svg2.append("text")
       .attr("class","years")
-      .attr("x", 600)
+      .attr("x", width * 0.70)
       .attr("y", height * 0.80)
       .text('102年');
 
     svg3.append("text")
       .attr("class","years")
-      .attr("x", 600)
+      .attr("x", width * 0.70)
       .attr("y", height * 0.80)
-      .text('103年');
+      .text('103年 (上半年)');
 
     svg2.append("g")
         .attr("class", "line")
@@ -371,7 +412,7 @@ select{
         .attr("class", "arc")
         .attr("d", path);
 
-        console.log(data);
+        // console.log(data);
 
     svg3.append("g")
         .attr("class", "line")
@@ -436,15 +477,6 @@ select{
         svg.attr('height', Math.round(targetWidth / aspect));
     }
   }
-
-
-
-
-
-
-
-
-
 
 </script>
 
