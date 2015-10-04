@@ -26,9 +26,9 @@
   }
 
 .line{
-  stroke:rgba(230, 255, 0, 0.5);
+  stroke:rgba(230, 255, 0, 0.8);
 /*  stroke:rgba(253,141,3,.3);*/
-  stroke-width:1px;
+  stroke-width:1.5px;
   fill:none;
 
 }
@@ -38,23 +38,30 @@
 /*  fill:white;*/
     }
 
-.title{
-  font-size:22px;
+.years{
+  font-size:40px;
   font-weight: 600;
   font-family: "Helvetica Neue";
   fill:black;
   opacity: 0.8;
-  margin-bottom: 50px;
+  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;
+/*  margin-bottom: 50px;*/
 }
 
-.value{
-  font-size:18px;
+.country{
+  font-size:25px;
   font-family: "Helvetica Neue";
-  /*fill:rgba(29, 168, 183, 1);*/
-  opacity: 0.6;
   fill:black;
-  font-weight: 500;
+  opacity: 0.7;
+/*  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;*/
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
+
+/*.svg2{
+  text-shadow: 0 3px 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, -3px 0 0 #fff;
+}*/
+
+
 
 select{
 /*  padding-top: 100px;*/
@@ -63,8 +70,9 @@ select{
 /*  z-index: 10000;*/
 }
 
-#map{
-  width: 500px;
+.maps{
+  width: 400px;
+  float:left;
 }
 
 
@@ -75,14 +83,9 @@ select{
 <script src='https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js'></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src='arc.js/arc.js'></script>
-<div id="option">
-<select type='select' onchange='updateData(value);' style='color:steelblue;font-size:1.1em;'>
-  <option class="filter_button" value='101' id="a_button" selected='true'>101年</option><br>
-  <option class="filter_button" value='102' id="b_button">102年</option><br>
-  <option class="filter_button" value='103' id="c_button">103年</option><br>
-</select>
-</div>
-<div id ='map'></div>
+<div id ='map' class="maps"></div>
+<div id ='map2' class="maps"></div>
+<div id ='map3' class="maps"></div>
 
 <script>
 
@@ -90,9 +93,6 @@ select{
   var margin = {top: 30, right: 30, bottom: 30, left: 30},
     width = 800 - margin.left - margin.right,
     height = 600 - margin.top - margin.bottom
-
-
-
 
   //This is the project for the globe 
   var projection = d3.geo.orthographic()
@@ -110,7 +110,8 @@ select{
         }
     });
 
-  var svg = d3.select('#map').append('svg')
+  var svg =  d3.select("#map").append('svg')
+  // d3.select('#map').append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
     .attr('class', 'graph-svg-component')
@@ -119,6 +120,63 @@ select{
     .attr("class", "globe-g")
     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
+  var svg2 =  d3.select("#map2").append('svg')
+  // d3.select('#map').append('svg')
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .attr('class', 'graph-svg-component')
+    .call(responsivefy) // Call function responsivefy to make the graphic reponsive according to the window width/height
+    .append('g')
+    .attr("class", "globe-g")
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var svg3 =  d3.select("#map3").append('svg')
+  // d3.select('#map').append('svg')
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .attr('class', 'graph-svg-component')
+    .call(responsivefy) // Call function responsivefy to make the graphic reponsive according to the window width/height
+    .append('g')
+    .attr("class", "globe-g")
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  svg.append("text")
+      .attr("class","country")
+      .attr("x", 600)
+      .attr("y", height * 0.87)
+      .text("");
+
+  svg2.append("text")
+      .attr("class","country svg2")
+      .attr("x", 600)
+      .attr("y", height * 0.87)
+      .text("");
+
+  svg3.append("text")
+      .attr("class","country svg3")
+      .attr("x", 600)
+      .attr("y", height * 0.87)
+      .text("");
+
+  svg.append("text")
+      .attr("class","country count1")
+      .attr("x", 600)
+      .attr("y", height * 0.93)
+      .text("");
+
+  svg2.append("text")
+      .attr("class","country count2")
+      .attr("x", 600)
+      .attr("y", height * 0.93)
+      .text("");
+
+  svg3.append("text")
+      .attr("class","country count3")
+      .attr("x", 600)
+      .attr("y", height * 0.93)
+      .text("");
+
+
   var globe = svg.selectAll('path.globe').data([{
         type: 'Sphere'
     }])
@@ -126,15 +184,19 @@ select{
     .attr('class', 'globe')
     .attr('d', path);
 
+  var globe2 = svg2.selectAll('path.globe').data([{
+        type: 'Sphere'
+    }])
+    .enter().append('path')
+    .attr('class', 'globe')
+    .attr('d', path);
 
-  ////////////////////////////////
-  ////////////////////////////////  
-  // Queue: queue is an asynchronous helper library for JavaScrip 
-  // It helps coders to easily load multiple datasets 
-  // Here's the link to queue github repository:
-  // https://github.com/mbostock/queue
-  ////////////////////////////////
-  ////////////////////////////////
+  var globe3 = svg3.selectAll('path.globe').data([{
+        type: 'Sphere'
+    }])
+    .enter().append('path')
+    .attr('class', 'globe')
+    .attr('d', path);
 
   queue()
       .defer(d3.json, 'data/world_countries.json')// load geojson/topojson data
@@ -185,23 +247,136 @@ select{
     // .append("g")
     .attr('class', 'baseMap');
 
+    svg2.selectAll('baseMap')
+        .data(world.features)
+        .enter()
+        .append('path')
+        .attr('d', path)
+    // .append("g")
+    .attr('class', 'baseMap');
+
+    svg3.selectAll('baseMap')
+        .data(world.features)
+        .enter()
+        .append('path')
+        .attr('d', path)
+    // .append("g")
+    .attr('class', 'baseMap');
+
+
     svg.selectAll('.cities_end')
-        .data(data)
+        .data(data.filter(function(d) { return d.year === "101"  }))
         .enter().append("path")
         .datum(function(d) {
             return {
                 type: "Point",
                 coordinates: [d.end_long, d.end_lat],
-                count: +d.count
+                count: +d.count * 4,
+                country: d.end_country
             };
         })
         .attr("d", path)
-        .attr('class', 'cities_end');
+        .attr('class', 'cities_end')
+        .on('mouseover',function(d){
+          d3.select(".country")
+            .text(d.country)
+
+          d3.select(".count1")
+            .text(d.count / 4 + " 名學生")
+        });
+
+
+    svg2.selectAll('.cities_end')
+        .data(data.filter(function(d) { return d.year === "102"  }))
+        .enter().append("path")
+        .datum(function(d) {
+            return {
+                type: "Point",
+                coordinates: [d.end_long, d.end_lat],
+                count: +d.count * 4,
+                country: d.end_country
+            };
+        })
+        .attr("d", path)
+        .attr('class', 'cities_end')
+        .on('mouseover',function(d){
+          d3.select(".svg2")
+            .text(d.country)
+
+          d3.select(".count2")
+            .text(d.count / 4 + " 名學生")
+        });
+
+    svg3.selectAll('.cities_end')
+        .data(data.filter(function(d) { return d.year === "103"  }))
+        .enter().append("path")
+        .datum(function(d) {
+            return {
+                type: "Point",
+                coordinates: [d.end_long, d.end_lat],
+                count: +d.count * 4,
+                country: d.end_country
+            };
+        })
+        .attr("d", path)
+        .attr('class', 'cities_end')
+        .on('mouseover',function(d){
+          d3.select(".svg3")
+            .text(d.country)
+
+           d3.select(".count3")
+            .text(d.count / 4 + " 名學生")
+        });
+
+        // console.log(data)
 
     svg.append("g")
         .attr("class", "line")
         .selectAll(".arc")
-        .data(data.map(function(d) {
+        .data(data.filter(function(d) { return d.year === "101"  })
+          .map(function(d) {
+            return d.arc;
+        }))
+        .enter()
+        .append("path")
+        .attr("class", "arc")
+        .attr("d", path);
+
+    svg.append("text")
+      .attr("class","years")
+      .attr("x", 600)
+      .attr("y", height * 0.80)
+      .text('101年');
+
+    svg2.append("text")
+      .attr("class","years")
+      .attr("x", 600)
+      .attr("y", height * 0.80)
+      .text('102年');
+
+    svg3.append("text")
+      .attr("class","years")
+      .attr("x", 600)
+      .attr("y", height * 0.80)
+      .text('103年');
+
+    svg2.append("g")
+        .attr("class", "line")
+        .selectAll(".arc")
+        .data(data.filter(function(d) { return d.year === "102"  }).map(function(d) {
+            return d.arc;
+        }))
+        .enter()
+        .append("path")
+        .attr("class", "arc")
+        .attr("d", path);
+
+        console.log(data);
+
+    svg3.append("g")
+        .attr("class", "line")
+        .selectAll(".arc")
+        .data(data.filter(function(d) { return d.year === "103"  }).map(function(d) {
             return d.arc;
         }))
         .enter()
@@ -210,7 +385,7 @@ select{
         .attr("d", path);
   }
 
-  d3.select("svg").call( //drag on the svg element
+  d3.selectAll(".maps").call( //drag on the svg element
     d3.behavior.drag()
     .origin(function() {
         var r = projection.rotate();
@@ -230,36 +405,37 @@ select{
         svg.selectAll('.cities_end')
             .attr("d", path);
 
+        svg2.selectAll(".baseMap").attr("d", path);
+        svg2.selectAll(".arc").attr("d", path);
+        svg2.selectAll('.cities_end')
+            .attr("d", path);
+
+        svg3.selectAll(".baseMap").attr("d", path);
+        svg3.selectAll(".arc").attr("d", path);
+        svg3.selectAll('.cities_end')
+            .attr("d", path);
+
     })
 );
 
+  function responsivefy(svg) {
+    var container = d3.select(svg.node().parentNode),
+        width = parseInt(svg.style('width')),
+        height = parseInt(svg.style('height')),
+        aspect = width / height;
 
-  
-  
+    svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+        .attr('perserveAspectRatio', 'xMinYMid')
+        .call(resize);
 
+    d3.select(window).on('resize', resize);
 
-
-
-
-
-    function responsivefy(svg) {
-      var container = d3.select(svg.node().parentNode),
-          width = parseInt(svg.style('width')),
-          height = parseInt(svg.style('height')),
-          aspect = width / height;
-
-      svg.attr('viewBox', '0 0 ' + width + ' ' + height)
-          .attr('perserveAspectRatio', 'xMinYMid')
-          .call(resize);
-
-      d3.select(window).on('resize', resize);
-
-      function resize() {
-          var targetWidth = parseInt(container.style('width'));
-          svg.attr('width', targetWidth);
-          svg.attr('height', Math.round(targetWidth / aspect));
-      }
+    function resize() {
+        var targetWidth = parseInt(container.style('width'));
+        svg.attr('width', targetWidth);
+        svg.attr('height', Math.round(targetWidth / aspect));
     }
+  }
 
 
 
