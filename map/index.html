@@ -3,6 +3,10 @@
 <html>
 <style>
 
+body{
+  font-family: "Helvetica Neue";
+}
+
 .baseMap{
   stroke-width:0.8px;
   stroke:#555;
@@ -72,7 +76,7 @@
 }
 
 table{
-   font-family: "Helvetica Neue";
+   font-family: "新細明體";
 }
 
 /*div {
@@ -90,6 +94,50 @@ g {
   outline: 1px solid red;
 }*/
 
+.title{
+  text-align: center;
+}
+
+h1{
+  font-size: 50px;
+  margin-top: 10px;
+/*  color:rgb(33, 113, 181);*/
+  color:#333333;
+}
+
+h3{ 
+  font-weight: 500;
+  margin-top: -20px;
+  color:#333333;
+  opacity:0.8;
+  font-size: 15px;
+
+
+}
+
+.table{
+  max-width: 1200px;
+  margin:auto;
+  font-size: .9em;
+  color:#333333;
+}
+
+a{
+ background-color: rgba(230, 255, 0, 0.5);
+ text-decoration: none;
+ color:black;
+}
+
+a:hover{
+  background-color: rgba(255,179,213,0.4); 
+    -webkit-transition: background-color 300ms linear;
+    -moz-transition: background-color 300ms linear;
+    -o-transition: background-color 300ms linear;
+    -ms-transition: background-color 300ms linear;
+    transition: background-color 300ms linear;
+}
+
+
 
 </style>
 <body>
@@ -103,6 +151,8 @@ g {
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
 <script src="js/script.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css" />
+<h1 class = "title">台灣交換學生資料庫</h1>
+<h3 class = "title">民國101至103年台灣交換學生資料，使用者可以移動滑鼠與拖曳地球儀查看詳細資料，<br>也可以利用下方資料庫內進行進階搜尋。資料來源來自教育部。製作人<a href="https://twitter.com/Jeremy_CF_Lin" target="_blank">Jeremy C.F. Lin</a>，<br>與台灣<a href="http://comm.nccu.edu.tw/index.php" target="_blank">政治大學傳播學院</a>一同合作。</h3>
 <div id="main-wrapper" class="">
         <div id="main-content" class="container">
             <div class="row">
@@ -111,8 +161,8 @@ g {
             <div id ='map3' class="maps col-lg-2"></div>
             </div>
             <div class ="row">
-            <div class="col-sm-5 col-sm-offset-1">
-              <table id="example" class="display" width="100%"></table>
+            <div class="table">
+              <table id="example" class="display " width="100%"></table>
             </div>
             </div>
         </div>

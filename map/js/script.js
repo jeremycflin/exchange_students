@@ -185,7 +185,7 @@ $(document).ready(function() {
         "columnDefs": [
             { "visible": false }
         ],
-        "scrollY":        "500px",
+        "scrollY":        "600px",
         "scrollCollapse": true,
         "paging":         false,
         "order": [[ 2, 'asc' ]],
